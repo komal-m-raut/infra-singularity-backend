@@ -6,7 +6,4 @@ export class UpdateCouponDto {
 
   @IsString()
   discount: string;
-
-  @IsString()
-  couponId: string;
 }

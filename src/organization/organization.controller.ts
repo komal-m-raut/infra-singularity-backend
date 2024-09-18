@@ -27,7 +27,6 @@ export class OrganizationController {
     @Body() createOrganizationDto: CreateOrganizationDto
   ) {
     const userId = req.user.userId;
-    console.log(userId, "userId");
     return this.organizationService.createOrganization(
       createOrganizationDto,
       userId

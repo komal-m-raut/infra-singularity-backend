@@ -39,19 +39,22 @@ export class OrganizationService {
     createOrganizationDto: CreateOrganizationDto,
     userId: string
   ): Promise<Organization> {
-    const userIds = [];
-    createOrganizationDto.emails.forEach(async (email) => {
-      const user = await this.userModel.findOne({ email });
-      if (!user) {
-        return;
-      }
-      userIds.push(user._id as unknown as string);
-    });
+    const userIds = await Promise.allSettled(
+      createOrganizationDto.emails.map(async (email) => {
+        const user = await this.userModel.findOne({ email });
+        if (!user) {
+          return;
+        }
+        return user._id;
+      })
+    );
 
     const createdOrganization = new this.organizationModel({
       name: createOrganizationDto.name,
       ownerId: userId,
-      userIds,
+      users: userIds
+        .filter((user) => user.status === "fulfilled" && user.value)
+        .map((user) => (user as PromiseFulfilledResult<any>).value),
     });
     return createdOrganization.save();
   }
@@ -71,11 +74,13 @@ export class OrganizationService {
     if (organization.users.includes(user._id as unknown as string)) {
       throw new BadRequestException("User already in organization");
     }
-    const updateOrganization = await this.organizationModel.findOneAndUpdate(
-      { ownerId: userId },
-      { $push: { users: user._id } },
-      { new: true }
-    );
+    const updateOrganization = await this.organizationModel
+      .findOneAndUpdate(
+        { ownerId: userId },
+        { $push: { users: user._id } },
+        { new: true }
+      )
+      .populate("users");
     return updateOrganization;
   }
 
@@ -97,11 +102,13 @@ export class OrganizationService {
     if (!organization.users.includes(user._id as unknown as string)) {
       throw new BadRequestException("User not in organization");
     }
-    const updateOrganization = await this.organizationModel.findOneAndUpdate(
-      { ownerId: userId },
-      { $pull: { users: user._id } },
-      { new: true }
-    );
+    const updateOrganization = await this.organizationModel
+      .findOneAndUpdate(
+        { ownerId: userId },
+        { $pull: { users: user._id } },
+        { new: true }
+      )
+      .populate("users coupons");
     return updateOrganization;
   }
 
@@ -119,11 +126,13 @@ export class OrganizationService {
       ownerId: userId,
     });
 
-    const updateOrganization = await this.organizationModel.findOneAndUpdate(
-      { ownerId: userId },
-      { $push: { coupons: coupon._id } },
-      { new: true }
-    );
+    const updateOrganization = await this.organizationModel
+      .findOneAndUpdate(
+        { ownerId: userId },
+        { $push: { coupons: coupon._id } },
+        { new: true }
+      )
+      .populate("users coupons");
     return updateOrganization;
   }
 
@@ -142,15 +151,25 @@ export class OrganizationService {
     if (!organization.coupons.includes(coupon._id as unknown as string)) {
       throw new BadRequestException("Coupon not in organization");
     }
-    const updateOrganization = await this.organizationModel.findOneAndUpdate(
-      { ownerId: userId },
-      { $pull: { coupons: coupon._id } },
-      { new: true }
-    );
+    const updateOrganization = await this.organizationModel
+      .findOneAndUpdate(
+        { ownerId: userId },
+        { $pull: { coupons: coupon._id } },
+        { new: true }
+      )
+      .populate("users coupons");
+    await this.couponModel.findByIdAndDelete(coupon._id);
     return updateOrganization;
   }
 
   async getOrganization(userId: string): Promise<Organization> {
-    return this.organizationModel.findOne({ ownerId: userId }).exec();
+    try {
+      return this.organizationModel
+        .findOne({ ownerId: userId })
+        .populate("users coupons")
+        .exec();
+    } catch {
+      throw new NotFoundException("Organization not found");
+    }
   }
 }

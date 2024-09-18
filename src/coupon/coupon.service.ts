@@ -25,22 +25,21 @@ export class CouponService {
 
   async updateCoupon(
     updateCouponDto: UpdateCouponDto,
-    userId: string
+    userId: string,
+    couponId: string
   ): Promise<Coupon> {
     const coupon = await this.couponModel.findOne({
-      _id: updateCouponDto.couponId,
+      _id: couponId,
     });
     if (!coupon) {
       throw new NotFoundException("Coupon not found");
     }
-    if (coupon.ownerId !== userId) {
+    if (coupon.ownerId.toString() !== userId.toString()) {
       throw new UnauthorizedException("You are not the owner of the coupon");
     }
-    return this.couponModel.findByIdAndUpdate(
-      updateCouponDto.couponId,
-      updateCouponDto,
-      { new: true }
-    );
+    return this.couponModel.findByIdAndUpdate(couponId, updateCouponDto, {
+      new: true,
+    });
   }
 
   async getCoupons(userId: string): Promise<Coupon[]> {

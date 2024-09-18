@@ -2,8 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  Param,
   Patch,
-  Post,
   Request,
   UseGuards,
 } from "@nestjs/common";
@@ -16,10 +16,14 @@ export class CouponController {
   constructor(private readonly couponService: CouponService) {}
 
   @UseGuards(JwtAuthGuard)
-  @Patch("/:id")
-  async updateCoupon(@Request() req, @Body() updateCouponDto: UpdateCouponDto) {
+  @Patch("/:couponId")
+  async updateCoupon(
+    @Request() req,
+    @Param("couponId") couponId: string,
+    @Body() updateCouponDto: UpdateCouponDto
+  ) {
     const userId = req.user.userId;
-    return this.couponService.updateCoupon(updateCouponDto, userId);
+    return this.couponService.updateCoupon(updateCouponDto, userId, couponId);
   }
 
   @UseGuards(JwtAuthGuard)
