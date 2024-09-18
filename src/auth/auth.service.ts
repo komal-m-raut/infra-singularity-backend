@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
 import { SignupDto } from './dto/signup.dto';
@@ -14,6 +14,10 @@ export class AuthService {
 
   async signup(signupDto: SignupDto) {
     const { email, password } = signupDto;
+    const existingUser = await this.userService.findByEmail(email);
+    if (existingUser) {
+      throw new HttpException('User already exists', HttpStatus.BAD_REQUEST);
+    }
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await this.userService.create({ email, password: hashedPassword });
     return this.generateToken(user);
@@ -22,8 +26,12 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
     const user = await this.userService.findByEmail(email);
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      throw new Error('Invalid credentials');
+    if (!user) {
+      throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
+    }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
     }
     return this.generateToken(user);
   }
