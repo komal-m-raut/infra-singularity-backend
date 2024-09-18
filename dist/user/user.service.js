@@ -20,12 +20,15 @@ let UserService = class UserService {
     constructor(userModel) {
         this.userModel = userModel;
     }
-    async create(user) {
-        const createdUser = new this.userModel(user);
+    async create(createUserDto) {
+        const createdUser = new this.userModel(createUserDto);
         return createdUser.save();
     }
     async findAll() {
         return this.userModel.find().exec();
+    }
+    async findById(id) {
+        return this.userModel.findById(id).exec();
     }
 };
 exports.UserService = UserService;

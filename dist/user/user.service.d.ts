@@ -1,8 +1,10 @@
 import { Model } from 'mongoose';
-import { User } from './user.interface';
+import { User } from './interfaces/user.interface';
+import { CreateUserDto } from './dto/create-user.dto';
 export declare class UserService {
     private readonly userModel;
     constructor(userModel: Model<User>);
-    create(user: User): Promise<User>;
+    create(createUserDto: CreateUserDto): Promise<User>;
     findAll(): Promise<User[]>;
+    findById(id: string): Promise<User>;
 }
