@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { forwardRef, Module } from "@nestjs/common";
 import { OrganizationService } from "./organization.service";
 import { OrganizationController } from "./organization.controller";
 import { MongooseModule } from "@nestjs/mongoose";
@@ -11,11 +11,11 @@ import { CouponModule } from "src/coupon/coupon.module";
     MongooseModule.forFeature([
       { name: "Organization", schema: OrganizationSchema },
     ]),
-    CouponModule,
+    forwardRef(() => CouponModule),
     UserModule,
   ],
   providers: [OrganizationService],
   controllers: [OrganizationController],
-  exports: [MongooseModule],
+  exports: [MongooseModule, OrganizationService],
 })
 export class OrganizationModule {}

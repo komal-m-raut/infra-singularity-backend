@@ -3,6 +3,8 @@ import {
   NotFoundException,
   BadRequestException,
   UnauthorizedException,
+  forwardRef,
+  Inject,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
@@ -16,6 +18,7 @@ import {
 } from "./dto/organization.dto";
 import { User } from "../user/interfaces/user.interface";
 import { Coupon } from "src/coupon/interfaces/coupon.interface";
+import { CouponService } from "src/coupon/coupon.service";
 
 @Injectable()
 export class OrganizationService {
@@ -23,7 +26,9 @@ export class OrganizationService {
     @InjectModel("Organization")
     private readonly organizationModel: Model<Organization>,
     @InjectModel("Coupon") private readonly couponModel: Model<Coupon>,
-    @InjectModel("User") private readonly userModel: Model<User>
+    @InjectModel("User") private readonly userModel: Model<User>,
+    @Inject(forwardRef(() => CouponService))
+    private readonly couponService: CouponService
   ) {}
 
   async findById(organizationId: string): Promise<Organization> {
@@ -111,6 +116,7 @@ export class OrganizationService {
     const coupon = await this.couponModel.create({
       name: addCouponDto.name,
       discount: addCouponDto.discount,
+      ownerId: userId,
     });
 
     const updateOrganization = await this.organizationModel.findOneAndUpdate(
